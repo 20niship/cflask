@@ -1,0 +1,302 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <title>Test Page</title>
+</head>
+
+<body>
+      <canvas width = "860" height = "700" id = "my_canvas"></canvas>
+<div id="report">
+  <table>
+    <tbody>
+    <tr><td>Robot x</td><td id="report-robot-x"></td></tr>
+    <tr><td>Robot y</td><td id="report-robot-y"></td></tr>
+    <tr><td>Robot rotation</td><td id="report-robot-rotation"></td></tr>
+    <tr><td>ball detected</td><td id="report-detected"></td></tr>
+    <tr><td>ball x</td><td id="report-ball-x"></td></tr>
+    <tr><td>ball y</td><td id="report-ball-y"></td></tr>
+    <tr><td>ball z</td><td id="report-ball-z"></td></tr>
+    </tbody>
+  </table>
+</div>
+<div id="myDiv"></div>
+</body>
+
+<style>
+#report{
+  background-color: #eaf;
+  opacity: 0.7;
+  position: fixed;
+  right:20px;
+  bottom:20px;
+  width:400px;
+  z-index:1000;
+  border: solid 1px #000;
+}
+table, tbody {width: 100%; }
+th,td {
+  border: solid 1px;              /* 枠線指定 */
+}
+ 
+table {
+  border-collapse:  collapse;     /* セルの線を重ねる */
+}
+
+</style>
+
+<script>
+let ball_data = {}
+let all_ball_data = []
+
+  const convertBlock = (incomingData) =>{ // incoming data is a UInt8Array
+    var i, l = incomingData.length;
+    var outputData = new Float32Array(incomingData.length);
+    for (i = 0; i < l; i++) {
+        outputData[i] = (incomingData[i] - 128) / 128.0;
+    }
+    return outputData;
+}
+
+let lrf_pos = []
+const float_parser = (value) => {
+  lrf_pos = new Float32Array(value.buffer);
+};
+
+const get_shapes = () => {
+    const startTime = Date.now(); // 開始時間
+  let shapes = [
+    { type:'rect', y0: 0, y1: 2500, x0:0, x1: 12000, fillcolor:'f88' }, 
+    { type:'rect', y0: 0, y1: 1000, x0:5500, x1: 6500, fillcolor:'ff6' }, 
+    { type:'rect', y0: 1450, y1: 2500, x0:5500, x1: 6500, fillcolor:'f55' }, 
+    { type:'rect', y0: 2500, y1: 9500, x0:0, x1:1500, fillcolor:'afa' }, 
+    { type:'rect', y0: 2500, y1: 9500, x0:10500, x1:12000, fillcolor:'afa' }, 
+    { type:'rect', y0: 2500, y1: 9500, x0:1500, x1:10500, fillcolor:'ffa' }, 
+    { type:'rect', y0: 9500, y1: 12000, x0:0, x1:12000, fillcolor:'aaf' }, 
+    { type:'rect', y0: 9500, y1: 10500, x0:5500, x1:6500, fillcolor:'77f' }, 
+    { type:'rect', y0: 11000, y1: 12000, x0:5500, x1:6500, fillcolor:'ffa' }, 
+    { type:'rect', y0: 2500, y1: 3500, x0:5000, x1:7000, fillcolor:'eee' }, 
+    { type:'rect', y0: 8500, y1: 9500, x0:5000, x1:7000, fillcolor:'eee' }, 
+  ];
+  console.log(lrf_pos);
+  for(l of lrf_pos){
+     const p = [l*10, Math.random() * 10000];
+     const r = 20;
+   shapes.push({ type:'circle',x0:p[0]-r, x1:p[0]+r, y0:p[1]-r, y1:p[1]+r, fillcolor: 'blue'})
+  }
+const endTime = Date.now(); // 終了時間
+console.log(endTime - startTime); // 何ミリ秒かかったかを表示する
+  return shapes;
+
+ const p = ball_data?.pos || [0,0,0];
+ const c = ball_data?.bbox || {x0:0, x1:0, y0:0, y1:0};
+ const r = 100;
+ shapes.push({ type:'circle',x0:p[0]-r, x1:p[0]+r, y0:p[1]-r, y1:p[1]+r, fillcolor: 'blue'})
+ shapes.push({ type:'rect',x0:c.x0, x1:c.x1, y0:c.y0, y1:c.y1, line:{color: 'red'}})
+
+ const r2 = 500;
+ const p2 = ball_data?.robot || [0,0,0];
+ shapes.push({ type:'circle',y0:p2[0]-r2, y1:p2[0]+r2, x0:p2[1]-r2, x1:p2[1]+r2, line: {color:'red'}})
+ const p3 = [
+     p2[0] - 1000 * Math.cos(p2[2]),
+     p2[1] + 1000 * Math.sin(p2[2])
+  ]; 
+ shapes.push({ type:'line',y0:p2[0], x0:p2[1], y1:p3[0], x1:p3[1], line: {color:'red'}})
+
+ document.getElementById("report-ball-x").innerText = p[0];
+ document.getElementById("report-ball-y").innerText = p[1];
+ document.getElementById("report-detected").innerText = "";
+ document.getElementById("report-robot-x").innerText = p2[0];
+ document.getElementById("report-robot-y").innerText = p2[1];
+ document.getElementById("report-robot-rotation").innerText = p2[2];
+ return shapes;
+}
+
+const update_plot = () => {
+/*
+  var canvas = document.getElementById('my_canvas');
+  if (canvas.getContext){
+   var ctx = canvas.getContext('2d');
+   ctx.beginPath();
+   for(data of all_ball_data){
+     const p = data.pos;
+     const r = 30;
+    
+     ctx.arc(p[0], p[1], 50, 0, Math.PI * 2, true); // 外の円
+   }
+   ctx.stroke();
+  }
+*/
+
+  const shapes = get_shapes();
+  const layout = {
+    title: 'Plot example',
+    xaxis: { range: [0, 12000], showgrid: false },
+    yaxis: { range: [0, 12000], showgrid: false },
+    width: 900, height: 900,
+    shapes
+  };
+
+  const data = [{
+    x: [1.5, 4.5],
+    y: [0.75, 0.75],
+    text: ['Unfilled Rectangle', 'Filled Rectangle'],
+    mode: 'text'
+  }];
+  Plotly.newPlot('myDiv', data, layout);
+}
+
+
+
+const update_plot2 = (value) => {
+         var canvas = document.getElementById('my_canvas');
+         gl = canvas.getContext('experimental-webgl'); 
+
+        let vertices = [];
+        let colors = []; 
+    const lrf_pos = new Float32Array(value.buffer);
+
+         for(let i=0; i<700; i+=1){
+            vertices.push(lrf_pos[i] / 300 - 0.5);           
+            vertices.push(Math.random() * 2 - 1);           
+            
+            colors.push(Math.random());
+            colors.push(Math.random());
+            colors.push(Math.random());
+        }
+        console.log(vertices);
+
+         // create an empty buffer object to store the vertex buffer
+         let vertex_buffer = gl.createBuffer();
+         gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+         gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+         let color_buffer = gl.createBuffer();
+         gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+         gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+        console.log("AAAAAAAAAAAAA")
+
+        const width = 800;
+        const height = 600;
+        const matrix_data = [
+          2.0 / width, 0.0, 0.0, 0.0, 
+          0.0, -2.0 / height, 0.0, 0.0,
+          0.0, 0.0, 1.0, 0.0,
+        -1.0, 1.0, 0.0, 1.0
+        ];
+        let matrix_buffer = gl.createBuffer();
+        gl.bindBuffer(gl.UNIFORM_BUFFER, matrix_buffer);
+        gl.bufferData(gl.UNIFORM_BUFFER, new Float32Array(matrix_data), gl.DYNAMIC_DRAW);
+        gl.bindBuffer(gl.UNIFORM_BUFFER, null); 
+        console.log("BBBBBBBBBB")
+
+         /*=========================shaders========================*/
+         const vertcode =
+            'attribute vec2 coordinates;' +
+            'attribute vec3 color;' +
+            'varying lowp vec4 vcolor;' +
+            'uniform mat4 view_matrix;' + 
+            'void main(void) {' +
+               'gl_Position= vec4(coordinates, 0.0, 1.0);' +
+               'gl_PointSize = 5.0;'+
+               'vcolor = vec4(color, 1.0);' + 
+            '}';
+         var vertshader = gl.createShader(gl.VERTEX_SHADER);
+         gl.shaderSource(vertshader, vertcode);
+         const res = gl.compileShader(vertshader);
+        console.log(res)
+
+         const fragcode =
+            'varying lowp vec4 vcolor;' +
+            'void main(void) {' +
+               ' gl_FragColor= vcolor;' +
+            '}';
+         var fragshader = gl.createShader(gl.FRAGMENT_SHADER);
+         gl.shaderSource(fragshader, fragcode);
+         gl.compileShader(fragshader);
+
+         var shaderprogram = gl.createProgram();
+         gl.attachShader(shaderprogram, vertshader); 
+         gl.attachShader(shaderprogram, fragshader);
+         gl.linkProgram(shaderprogram);
+         gl.useProgram(shaderprogram);
+
+         /*======== associating shaders to buffer objects ========*/
+
+         gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+         var coord = gl.getAttribLocation(shaderprogram, "coordinates");
+         gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
+         gl.enableVertexAttribArray(coord);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+        const col_attr = gl.getAttribLocation(shaderprogram, "color");
+        gl.vertexAttribPointer(col_attr, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(col_attr);
+
+        // const mat_attr = gl.getAttribLocation(shaderprogram, "view_matrix");
+        const mat_attr = gl.getUniformLocation(shaderprogram, "view_matrix");
+        gl.uniform4fv(mat_attr, matrix_data);  
+        
+         /*============= drawing the primitive ===============*/
+         gl.clearColor(0.5, 0.5, 0.5, 0.9);
+         gl.enable(gl.DEPTH_TEST);
+         gl.clear(gl.COLOR_BUFFER_BIT);
+         gl.viewport(0,0,canvas.width,canvas.height);
+         gl.drawArrays(gl.POINTS, 0, vertices.length/ 3);
+}
+
+const parse_stream_input = (arr) => {
+  const str = new TextDecoder().decode(arr);
+  const nums = str.split(',').map((item) =>{ return parseFloat(item, 10); });
+  ball_data = {
+      pos : [nums[0], nums[1], nums[2]],
+      robot: [nums[3], nums[4], nums[5]],
+      bbox:{x0:nums[6],x1:nums[7],y0:nums[8], y1:nums[9]},
+      estiamte:[nums[10], nums[11]]
+  };
+  all_ball_data.push(ball_data);
+  update_plot();
+}
+
+const start_stream = async() => {
+fetch('./stream')
+  .then(response => {
+    const reader = response.body.getReader();
+    return new ReadableStream({
+      start(controller) {
+      const pump = ()=> {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            controller.close();
+            return;
+          }else{
+            float_parser(value);
+            update_plot2(value);
+            //parse_stream_input(value); 
+          }
+          controller.enqueue(value);
+          return pump();
+        });
+      }
+      return pump();
+      }
+    })
+  })
+  .then(stream => new Response(stream))
+  .then(response => response.blob())
+  .then(blob => URL.createObjectURL(blob))
+  //.then(url => console.log(image.src = url))
+  .catch(err => console.error(err));
+}
+
+window.onload = async()=> {
+    update_plot();
+  start_stream();
+}
+
+</script>
+</html>
+

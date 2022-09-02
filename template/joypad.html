@@ -1,0 +1,112 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+<script src="/public/js/joypad.js"></script>
+  <title>Gamepads.js Example</title>
+  </head>
+	<body>
+    <h1>Joypad Test</h1>
+      <canvas id='left-joystick' width='100' height='100'></canvas>
+      <canvas id='right-joystick' width='100' height='100'></canvas>
+      <div id='pressed-buttons'></div>
+      <table id="joypaddata"> </table>
+	</body>
+
+<script>
+const DOT_SIZE = 6;
+let count = 0;
+let dots = {};
+let pressedButtons = {};
+
+
+function drawJoystick(values, left) {
+    let id = (left ? 'left' : 'right');
+    let canvas = document.getElementById(id + '-joystick');
+    let ctx = canvas.getContext('2d');
+    if (dots[id]) {
+        ctx.clearRect(dots[id].x - 1, dots[id].y - 1, DOT_SIZE + 2, DOT_SIZE + 2);
+    }
+    let x = Math.ceil(canvas.width / 2 * (1 + values[0]/100));
+    let y = Math.ceil(canvas.height / 2 * (1 + values[1]/100));
+    let rect = { x: x - DOT_SIZE / 2, y: y - DOT_SIZE / 2 };
+    ctx.fillStyle = 'cyan';
+    ctx.fillRect(rect.x, rect.y, DOT_SIZE, DOT_SIZE);
+    ctx.strokeStyle = 'black';
+    ctx.strokeRect(rect.x, rect.y, DOT_SIZE, DOT_SIZE);
+    dots[id] = rect;
+}
+
+const send = (list) => {
+    const copy = list;
+    var arr = new Uint8Array("aaaaa");
+    console.log(arr);
+    var xhr = new XMLHttpRequest;
+    xhr.open("POST", "/sync/joypad1", false);
+    xhr.send(arr);
+}
+
+const arraysEqual = (a, b)=> {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+
+  // If you don't care about the order of the elements inside
+  // the array, you should sort both arrays here.
+  // Please note that calling sort on an array will modify that array.
+  // you might want to clone your array first.
+
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+
+let joypad_buf = [];
+const joypad = new JoyPad((buttons, axis) => {
+    const e = document.getElementById("joypaddata");
+    if(e){
+    let str = "";
+    let i=0
+    for(const b of buttons){ str += `<tr><td>Button ${i}</td><td>${b}</td></tr>`; i+=1;}
+    i = 0;
+    for(const b of axis){ str += `<tr><td>Axis ${i}</td><td>${b}</td></tr>`; i+= 1; }
+    e.innerHTML = str;
+      }
+    drawJoystick([axis[0], axis[1]], true);
+    drawJoystick([axis[2], axis[3]], false);
+
+    // i= 0;
+    // for(const b of buttons){joypad_buf[i] = b; i+=1;}
+    // for(const b of axis){joypad_buf[i] = b+100; i+=1;}
+    // const strarr = joypad_buf.toString();
+    // console.log(strarr);
+    // fetch("/sync/joypad",{
+    //     method: "POST",
+    //     body : strarr 
+    // })
+
+    i= 0;
+    let new_data = []
+    for(const b of buttons){new_data[i] = b; i+=1;}
+    for(const b of axis){new_data[i] = b+100; i+=1;}
+    
+    if(!arraysEqual(joypad_buf, new_data)){
+      joypad_buf = new_data;
+      let buf = new Uint8Array(20);
+      i= 0;
+      for(const b of buttons){buf[i] = b; i+=1;}
+      for(const b of axis){buf[i] = b+100; i+=1;}
+        console.log(new String(buf))
+      fetch("/sync/joypad1",{
+          method: "POST",
+          body :buf.buffer 
+      })
+        console.log("SEND!");
+    }
+});
+joypad.start();
+</script>
+</html>
+
+

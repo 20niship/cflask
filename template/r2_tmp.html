@@ -1,0 +1,255 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <title>Test Page</title>
+</head>
+
+<body>
+<div id="uis">
+  <script>
+    const call= async(url) => { await fetch(`/cb/${url}`); }
+  </script>
+  <table>
+    <tbody>
+      <button type="button" onclick="call('start')">Start R2</button>
+      <button type="button" onclick="call('stop')">Stop R2</button>
+      <button type="button" onclick="call('ball')">ball認識開始</button>
+      <button type="button" onclick="call('lagori')">Lagori認識開始</button>
+      <button type="button" onclick="call('frame0')">goto Frame0</button>
+      <button type="button" onclick="call('ball-reset')">ball認識reset</button>
+      <button type="button" onclick="call('goto_start')">R2初期位置へ</button>
+    </tbody>
+  </table>
+  <div id="goto">
+    <input id="goto-x" type="number" value="0">
+    <input id="goto-y" type="number" value="0">
+    <script>
+      const go = async(url)=> {
+        const x = document.getElementById("goto-x").value;
+        const y = document.getElementById("goto-y").value;
+        await fetch('/cb/goto?' + new URLSearchParams({ x:x, y:y}))
+      }
+    </script>
+    <button type="button" onclick="go()">GO</button>
+  </div>
+</div>
+
+<div id="report">
+  <table>
+    <tbody>
+    <tr><td>ball x</td><td id="report-ball-x"></td></tr>
+    <tr><td>ball y</td><td id="report-ball-y"></td></tr>
+    <tr><td>ball z</td><td id="report-ball-z"></td></tr>
+    <tr><td>ball bbox 1</td><td id="report-ball-bbox-1"></td></tr>
+    <tr><td>ball bbox 2</td><td id="report-ball-bbox-2"></td></tr>
+    <tr><td>ball bbox 3</td><td id="report-ball-bbox-3"></td></tr>
+    <tr><td>ball bbox 4</td><td id="report-ball-bbox-4"></td></tr>
+    <tr><td>ball detected</td><td id="report-detected"></td></tr>
+    <tr><td>Robot x</td><td id="report-robot-x"></td></tr>
+    <tr><td>Robot y</td><td id="report-robot-y"></td></tr>
+    <tr><td>Robot rotation</td><td id="report-robot-rotation"></td></tr>
+    <tr><td>lagori x</td><td id="report-lagori-x"></td></tr>
+    <tr><td>lagori y</td><td id="report-lagori-y"></td></tr>
+    <tr><td>lagori z</td><td id="report-lagori-z"></td></tr>
+    <tr><td>lagori rot</td><td id="report-lagori-r"></td></tr>
+    <tr><td>lagori detected</td><td id="report-lagori-detected"></td></tr>
+    </tbody>
+  </table>
+</div>
+<div id="myDiv"></div>
+<p id="ball-avoid-info"></p>
+
+<div>
+  <script>
+    const ballclear = () => { ball_data = []; }
+  </script>
+  <table>
+    <tbody>
+   <button type="button" onclick="ballclear()">ball clear</button>
+    </tbody>
+  </table>
+</div>
+</body>
+
+<style>
+#report{
+  background-color: #eaf;
+  opacity: 0.7;
+  position: fixed;
+  right:20px;
+  bottom:20px;
+  width:400px;
+  z-index:1000;
+  border: solid 1px #000;
+}
+table, tbody {width: 100%; }
+th,td { border: solid 1px;}
+table { border-collapse:  collapse;}
+button {
+  background-color: #222;
+  border-radius: 4px;
+  border-style: none;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+  outline: none;
+  overflow: hidden;
+  padding: 9px 20px 8px;
+  position: relative;
+  text-align: center;
+  text-transform: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  margin:10px;
+}
+
+button:hover, button:focus {
+  opacity: .75;
+}
+</style>
+
+<script>
+let received_data = []
+let ball_data = [] // positions 
+
+const get_shapes = () => {
+    const startTime = Date.now(); // 開始時間
+  let shapes = [
+    { type:'rect', y0: 0, y1: 2500, x0:0, x1: 12000, fillcolor:'f88' }, 
+    { type:'rect', y0: 0, y1: 1000, x0:5500, x1: 6500, fillcolor:'ff6' }, 
+    { type:'rect', y0: 1450, y1: 2500, x0:5500, x1: 6500, fillcolor:'f55' }, 
+    { type:'rect', y0: 2500, y1: 9500, x0:0, x1:1500, fillcolor:'afa' }, 
+    { type:'rect', y0: 2500, y1: 9500, x0:10500, x1:12000, fillcolor:'afa' }, 
+    { type:'rect', y0: 2500, y1: 9500, x0:1500, x1:10500, fillcolor:'ffa' }, 
+    { type:'rect', y0: 9500, y1: 12000, x0:0, x1:12000, fillcolor:'aaf' }, 
+    { type:'rect', y0: 9500, y1: 10500, x0:5500, x1:6500, fillcolor:'77f' }, 
+    { type:'rect', y0: 11000, y1: 12000, x0:5500, x1:6500, fillcolor:'ffa' }, 
+    { type:'rect', y0: 2500, y1: 3500, x0:5000, x1:7000, fillcolor:'eee' }, 
+    { type:'rect', y0: 8500, y1: 9500, x0:5000, x1:7000, fillcolor:'eee' }, 
+  ];
+
+  if(received_data.length < 14) return shapes; 
+ 
+  // draw ball
+  const b_pos = [received_data[0], received_data[1], received_data[2]];
+  const b_b = [received_data[3], received_data[4], received_data[5], received_data[6]];
+  const r = 100;
+  shapes.push({ type:'circle',x0:b_pos[0]-r, x1:b_pos[0]+r, y0:b_pos[1]-r, y1:b_pos[1]+r, fillcolor: 'black'})
+  shapes.push({ type:'rect',x0:b_b[0], x1:b_b[1], y0:b_b[2], y1:b_b[3], line:{color: 'red'}})
+  if(b_pos[0] > 100){
+      ball_data.push(b_pos);
+  }
+  for(const a of ball_data)
+    shapes.push({ type:'circle',x0:a[0]-r, x1:a[0]+r, y0:a[1]-r, y1:a[1]+r, fillcolor: 'green'})
+
+  // draw robot position
+  const r2 = 500;
+  const b_r = [received_data[7], received_data[8], received_data[9]];
+  shapes.push({ type:'circle',y0:b_r[0]-r2, y1:b_r[0]+r2, x0:b_r[1]-r2, x1:b_r[1]+r2, line: {color:'red'}})
+  const p3 = [
+      b_r[0] - 1000 * Math.cos(b_r[2]),
+      b_r[1] + 1000 * Math.sin(b_r[2])
+   ]; 
+  shapes.push({ type:'line',y0:p3[0], x0:p3[1], y1:p3[0], x1:p3[1], line: {color:'red'}})
+
+  // draw lagori position
+  const r3 = 100;
+  const b_l = [received_data[11], received_data[10], received_data[12]];
+  shapes.push({ type:'circle',y0:b_l[1]-r3, y1:b_l[1]+r3, x0:b_l[0]-r3, x1:b_l[0]+r3, line: {color:'blue'}})
+  const l_rot = received_data[13];
+  if(l_rot > 100){
+      const r4 = 200;
+    shapes.push({ type:'circle',y0:b_l[1]-r4, y1:b_l[1]+r4, x0:b_l[0]-r4, x1:b_l[0]+r4, line: {color:'blue'}})
+    document.getElementById("report-lagori-r").innerText = "UP!"; 
+  }else{
+    const p3 = [
+        b_l[0] + 300 * Math.cos(l_rot),
+        b_l[1] - 300 * Math.sin(l_rot)
+     ]; 
+    shapes.push({ type:'line',y0:b_l[1], x0:b_l[0], y1:p3[1], x1:p3[0], line:{color:'blue'}})
+    document.getElementById("report-lagori-r").innerText = l_rot; 
+  }
+
+  document.getElementById("report-ball-x").innerText = b_pos[0];
+  document.getElementById("report-ball-y").innerText = b_pos[1];
+  document.getElementById("report-ball-z").innerText = b_pos[2];
+  document.getElementById("report-ball-bbox-1").innerText = b_b[0];
+  document.getElementById("report-ball-bbox-2").innerText = b_b[1];
+  document.getElementById("report-ball-bbox-3").innerText = b_b[2];
+  document.getElementById("report-ball-bbox-4").innerText = b_b[3];
+  document.getElementById("report-detected").innerText = "";
+  document.getElementById("report-robot-x").innerText = b_r[0];
+  document.getElementById("report-robot-y").innerText = b_r[1];
+  document.getElementById("report-robot-rotation").innerText = b_r[2];
+  document.getElementById("report-lagori-x").innerText = b_l[0];
+  document.getElementById("report-lagori-y").innerText = b_l[1];
+  document.getElementById("report-lagori-z").innerText = b_l[2];
+
+  const slider_goto = received_data[14];
+    console.log(slider_goto);
+  document.getElementById("ball-avoid-info").innerText = slider_goto;
+  return shapes;
+}
+
+const update_plot = () => {
+  const shapes = get_shapes();
+  const layout = {
+    xaxis: { range: [0, 12000], showgrid: false },
+    yaxis: { range: [0, 12000], showgrid: false },
+    width: 700, height: 700,
+    shapes
+  };
+
+  const data = [{
+    x: [1.5, 4.5],
+    y: [0.75, 0.75],
+    text: ['Unfilled Rectangle', 'Filled Rectangle'],
+    mode: 'text'
+  }];
+  Plotly.newPlot('myDiv', data, layout);
+}
+
+const start_stream = async() => {
+fetch('./stream')
+  .then(response => {
+    const reader = response.body.getReader();
+    return new ReadableStream({
+      start(controller) {
+      const pump = ()=> {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            controller.close();
+            return;
+          }else{
+            received_data= new Float32Array(value.buffer);
+            update_plot();
+          }
+          controller.enqueue(value);
+          return pump();
+        });
+      }
+      return pump();
+      }
+    })
+  })
+  .then(stream => new Response(stream))
+  .then(response => response.blob())
+  .then(blob => URL.createObjectURL(blob))
+  //.then(url => console.log(image.src = url))
+  .catch(err => console.error(err));
+}
+
+window.onload = async()=> {
+    update_plot();
+  start_stream();
+}
+
+</script>
+</html>
+

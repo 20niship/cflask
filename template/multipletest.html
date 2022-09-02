@@ -1,0 +1,316 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>RC22 Controller MultipleTest</title>
+         <script src="message.js"></script>
+         <script src="/public/message.js"></script>
+    </head>
+<body>
+    <aside>
+        <ul>
+          <li> <a href="/">Main</a> </li>
+          <li> <a href="/multipletest">MultipleTeset</a> </li>
+          <li> <a href="/device-check">device-check</a> </li>
+          <li> <a href="/user-define">Callbacks</a> </li>
+          <li> <a href="/Logger">Logger</a> </li>
+        </ul>
+    </aside>
+    <header>
+        <img src="/public/logo.png" id="title-logo" />
+        <a id="title" href="/">RC22 Controller</a>
+    </header>
+
+    <div class="wrapper">
+      <h1>Nyan Multipletest ver0.00</h1>
+     <table>
+  <tr>
+    <th>Device ID</th>
+    <th>Device Name</th>
+    <th>Acctual Current</th>
+    <th>Target Current</th>
+    <th>hogehoge</th>
+    <th>hogehoge</th>
+  </tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+  <tr><td>1</td><td>Servo 1</td><td>Se<td>100</td><td><input type="number"><td>100</td></tr>
+      </table>
+    </div>
+</body>
+</html>
+
+<script>
+window.onload = async()=> {
+  await MyMessage({title:"Multiple Testをブラウザからやりたいね！"}) 
+  MyMessage({msg:"Controller start!", duration:1000}) 
+}
+</script>
+
+<style>
+html{font-size: 100%;}
+*{color:#fff;}
+body{background-color: #333;}
+.wrapper{
+    background-color: #333;
+    margin-top: 55px;
+    margin-left:105px;
+    margin-right: 10px;
+    grid-template-rows:130px;
+    display: grid;
+    padding:0;
+}
+
+.wrapper-visualizer{
+    grid-row: 1 / 3;
+    grid-column: 1 / 2;
+}
+
+.wrapper-buttons{
+    grid-row: 2 / 3;
+    grid-column: 2 / 3;
+}
+
+.wrapper-controller{
+    grid-row: 1 / 2;
+    grid-column: 2 / 3;
+}
+
+.wrapper-item{
+    border:solid 1px #aaa;
+}
+.joystick-canvas{ margin:3px; }
+
+.pressed-buttons{
+    overflow: hidden;
+}
+
+.active-joypad-btn{
+  color:red;
+  background-color:#fff;
+}
+
+.js-btn-vis{
+    border: solid 1px #fff;
+    border-radius: 50%;
+    width:20px;
+    height:20px;
+    text-align: center;
+    float: left;
+}
+
+header{
+  position:absolute;
+  top: 0;
+  left:0;
+  right:0;
+  z-index:10;
+  height:50px;
+  width:100%;
+  background-color: #222;
+}
+header img{
+    width:40px;
+    margin:3px;
+}
+
+#title{
+    margin-left: 20px;
+    line-height: 30px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 2.0rem;
+    color:white;
+}
+
+aside{
+  width: 100px;
+  overflow: visible;
+  background: #00aff0;
+  border-right: 1px solid #038ec1;
+  position: absolute;
+  top: 50px;
+  bottom: 0;
+  height: 100%;
+  left: 0;
+  overflow: hidden;
+  z-index: 9;
+}
+aside ul { padding-left: 0; }
+aside li {
+  position: relative;
+  display: block;
+  width: 250px;
+  overflow: hidden;
+}
+aside li a {
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: #fff;
+  display: block;
+  padding: 10px;
+  position: absolute;
+  text-decoration: none;
+  transition: all 0.1s linear 0s;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+aside li a:hover { background: #038ec1; }
+
+#report{
+  background-color: #eaf;
+  opacity: 0.7;
+  position: fixed;
+  right:20px;
+  bottom:20px;
+  width:400px;
+  z-index:1000;
+  border: solid 1px #000;
+}
+table, tbody {width: 100%; }
+th,td { border: solid 1px;}
+table { border-collapse:  collapse;}
+button {
+  background-color: #222;
+  border-radius: 4px;
+  border-style: none;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 1.0rem;
+  line-height: 1.5;
+  outline: none;
+  overflow: hidden;
+  padding: 3px 10px 3px;
+  position: relative;
+  text-align: center;
+  text-transform: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  margin:4px;
+}
+
+button:hover, button:focus {
+  background-color: #fff;
+  color:#222;
+}
+
+
+/*  ###################################
+   #####        Message Dialog      #######
+   ###################################*/
+   .my-dialog-ovelay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.my-dialog-confirm {
+  width: 400px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  border:solid 1px #aaa;
+  overflow: hidden;
+}
+
+.my-dialog-simple{
+  width: 180px;
+  position:fixed;
+  top:100px;
+  right: 10px;
+  height:40px;
+  padding:10px;
+  background-color: rgba(24, 48, 155, 0.479);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  border:solid 1px #aaa;
+  border-radius: 3px;
+  overflow: hidden;
+  z-index:99999;
+}
+
+.my-dialog-title {
+  font-size: 13px;
+  font-weight: bold;
+  padding:8px;
+  margin: 0;
+  color: #888;
+  display: inline-block;
+}
+
+.my-dialog-msg {
+  padding-left: 12px;
+}
+
+.my-dialog-confirm  .fa-times,
+.my-dialog-simple  .fa-times {
+  float: right;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.5s ease;
+  padding:10px;
+  border-radius: 1px;
+}
+
+.my-dialog-simple  .fa-times {
+  padding:0;
+}
+
+.my-dialog-buttons {
+  background-color: #ddd;
+  width:100%;
+  height:40px;
+  padding: 0;
+  padding-right:20px;
+}
+
+#my-confirm-yes-btn,
+#my-confirm-no-btn {
+  width: 80px;
+  height:30px;
+  margin:5px 5px;
+  float:right;
+  cursor: pointer;
+}
+
+#my-confirm-yes-btn{
+  background-color: rgb(182, 14, 14);
+  color:#fff;
+}
+
+.my-dialog-fadeout-remove {
+  opacity: 0.0;
+  transition-property: opacity; 
+  transition-duration: 0.3s;
+}
+
+</style>

@@ -1,0 +1,100 @@
+
+/*  ###################################
+   #####        Message Dialog      #######
+   ###################################*/
+   .my-dialog-ovelay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.my-dialog-confirm {
+  width: 400px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  border:solid 1px #aaa;
+  overflow: hidden;
+}
+
+.my-dialog-simple{
+  width: 250px;
+  position:fixed;
+  top:100px;
+  right: 10px;
+  height:60px;
+  padding:10px;
+  background-color: rgba(230, 100, 200, 0.9);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  border:solid 1px #aaa;
+  border-radius: 3px;
+  overflow: hidden;
+  z-index:99999;
+}
+
+.my-dialog-title {
+  font-size: 13px;
+  font-weight: bold;
+  padding:8px;
+  margin: 0;
+  color: #666;
+  display: inline-block;
+}
+
+.my-dialog-msg {
+  padding-left: 12px;
+  color:#000;
+  font-weight:bold;
+}
+
+.my-dialog-confirm  .fa-times,
+.my-dialog-simple  .fa-times {
+  float: right;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.5s ease;
+  padding:10px;
+  border-radius: 1px;
+}
+
+.my-dialog-simple  .fa-times {
+  padding:0;
+}
+
+.my-dialog-buttons {
+  background-color: #ddd;
+  width:100%;
+  height:40px;
+  padding: 0;
+  padding-right:20px;
+}
+
+#my-confirm-yes-btn,
+#my-confirm-no-btn {
+  width: 80px;
+  height:30px;
+  margin:5px 5px;
+  float:right;
+  cursor: pointer;
+}
+
+#my-confirm-yes-btn{
+  background-color: rgb(182, 14, 14);
+  color:#fff;
+}
+
+.my-dialog-fadeout-remove {
+  opacity: 0.0;
+  transition-property: opacity; 
+  transition-duration: 0.3s;
+}
+

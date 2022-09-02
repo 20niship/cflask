@@ -1,0 +1,430 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>RC22 Controller</title>
+         <script src="/public/js/joypad.js"></script>
+         <script src="/public/js/message.js"></script>
+         <script src="/public/js/myplot.js"></script>
+         <script src="/public/js/dash.js"></script>
+         <link href="/public/css/message.css" rel="stylesheet">
+         <link href="/public/css/controller.css" rel="stylesheet">
+         <!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
+         <script>
+function openWindow(url,windowName){
+  info = 'toolbar=no,location=no,directories=no,status=no,menubar=no,' +
+   'scrollbars=yes,left=0,top=0,resizable=yes,width=1014,height=740,title=no';
+  var window1 = window.open(url,windowName,info);
+  window1.moveTo(0, 0);
+  window.opener = self;
+  window.close();
+}
+         </script>
+    </head>
+<body onLoad='openWindow("hoge.html","myWindow");'>
+    <aside>
+        <ul>
+          <li> <a href="/">Main</a> </li>
+          <li> <a href="/multipletest">MultipleTeset</a> </li>
+          <li> <a href="/device_check">device-check</a> </li>
+          <li> <a href="/user-define">Callbacks</a> </li>
+          <li> <a href="/Logger">Logger</a> </li>
+        </ul>
+    </aside>
+    <header>
+        <img src="/public/nerv.jpg" id="title-logo" />
+        <a id="title" href="/">RC22 Controller</a>
+    </header>
+<p id="ball-avoid-info"></p>
+    <div class="wrapper">
+        <div class="wrapper-visualizer wrapper-item">
+            <canvas width = "500" height = "500" id = "visualizer"></canvas>
+<div id="report" style="display:none;">
+  <table>
+    <tbody>
+    <tr><td>ball x</td><td id="report-ball-x"></td></tr>
+    <tr><td>ball y</td><td id="report-ball-y"></td></tr>
+    <tr><td>ball z</td><td id="report-ball-z"></td></tr>
+    <tr><td>ball bbox 1</td><td id="report-ball-bbox-1"></td></tr>
+    <tr><td>ball bbox 2</td><td id="report-ball-bbox-2"></td></tr>
+    <tr><td>ball bbox 3</td><td id="report-ball-bbox-3"></td></tr>
+    <tr><td>ball bbox 4</td><td id="report-ball-bbox-4"></td></tr>
+    <tr><td>ball detected</td><td id="report-detected"></td></tr>
+    <tr><td>Robot x</td><td id="report-robot-x"></td></tr>
+    <tr><td>Robot y</td><td id="report-robot-y"></td></tr>
+    <tr><td>Robot rotation</td><td id="report-robot-rotation"></td></tr>
+    <tr><td>lagori x</td><td id="report-lagori-x"></td></tr>
+    <tr><td>lagori y</td><td id="report-lagori-y"></td></tr>
+    <tr><td>lagori z</td><td id="report-lagori-z"></td></tr>
+    <tr><td>lagori rot</td><td id="report-lagori-r"></td></tr>
+    <tr><td>lagori detected</td><td id="report-lagori-detected"></td></tr>
+    </tbody>
+  </table>
+</div>
+        </div>
+        <div class="wrapper-controller wrapper-item">
+          <p id="joypad-id">Joypad ID = -1</p>
+      <canvas id='left-joystick' class="joystick-canvas" width='90' height='90'></canvas>
+      <canvas id='right-joystick' class="joystick-canvas"  width='90' height='90'></canvas>
+      <div id='pressed-buttons'>
+          <div class="js-btn-vis" id="js-btn-left">L</div>
+          <div class="js-btn-vis" id="js-btn-right">R</div>
+          <div class="js-btn-vis" id="js-btn-top">T</div>
+          <div class="js-btn-vis" id="js-btn-bottom">B</div>
+
+          <div class="js-btn-vis" id="js-btn-triangle">△</div>
+          <div class="js-btn-vis" id="js-btn-circle">○</div>
+          <div class="js-btn-vis" id="js-btn-cross">☓</div>
+          <div class="js-btn-vis" id="js-btn-rect">□</div>
+          
+          <div class="js-btn-vis" id="js-btn-up">↓</div>
+          <div class="js-btn-vis" id="js-btn-down">↑</div>
+          <div class="js-btn-vis" id="js-btn-right">→</div>
+          <div class="js-btn-vis" id="js-btn-left">←</div>
+      </div>
+        </div>
+        <div class="wrapper-buttons wrapper-item">
+            <table>
+                <tbody>
+          <div class="status-indicators">
+            <div class="status-indicator status-alive" id="indicator-r2">R2</div>
+            <div class="status-indicator status-alive" id="indicator-r1">R1</div>
+            <div class="status-indicator status-dead" id="indicator-lagori">Lagori</div>
+          </div>
+                  <button type="button" onclick="post_fetch('start')">Start R2</button>
+                  <button type="button" onclick="post_fetch('stop')">Stop R2</button>
+                  <button type="button" onclick="post_fetch('ball')">ball認識開始</button>
+                  <button type="button" onclick="post_fetch('lagori')">Lagori認識開始</button>
+                  <button type="button" onclick="post_fetch('frame0')">goto Frame0</button>
+                  <button type="button" onclick="post_fetch('ball-reset')">ball認識reset</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <script>
+const show_popup = (value) => {
+    const bg = document.getElementById("popup-container-bg");
+    const pu = document.getElementById("popup");
+if(value){
+    bg.style.display ="inline-block";              
+    pu.style.display ="inline-block";              
+}else{
+    bg.style.display ="none";              
+    pu.style.display ="none";              
+}
+}
+</script>
+    <div class="popup-container-bg" id="popup-container-bg" onclick="show_popup(false)">
+      <div class="popup" id="popup">
+<button type="button" onclick="show_popup(false)">Close</button>
+      <div class="popup-content"><h1>ぽっぷあっっぷめにゅーだよおーーー</h1>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+      </div>
+    </div>
+  </div>
+                  <button type="button" onclick="show_popup(true)">Popup表示！</button>
+                </tbody>
+              </table>
+              <div id="goto">
+                <input id="goto-x" type="number" value="0">
+                <input id="goto-y" type="number" value="0">
+                <script>
+                  const go = async(url)=> {
+                    const x = document.getElementById("goto-x").value;
+                    const y = document.getElementById("goto-y").value;
+                    await fetch('/cb/goto?' + new URLSearchParams({ x:x, y:y}))
+                  }
+                </script>
+                <button type="button" onclick="go()">GO</button>
+              </div>
+<script>
+let coontroller_id = -1;
+let dots = {};
+const  drawJoystick = (values, left) => {
+    const DOT_SIZE = 10;
+    let id = (left ? 'left' : 'right');
+    let canvas = document.getElementById(id + '-joystick');
+    let ctx = canvas.getContext('2d');
+    if (dots[id]) {
+        ctx.clearRect(dots[id].x - 1, dots[id].y - 1, DOT_SIZE + 2, DOT_SIZE + 2);
+    }
+    let x = Math.ceil(canvas.width / 2.8 * (1 + values[0]/100));
+    let y = Math.ceil(canvas.height / 2.8 * (1 + values[1]/100));
+    let rect = { x: x - DOT_SIZE / 2, y: y - DOT_SIZE / 2 };
+    ctx.fillStyle = 'cyan';
+    ctx.fillRect(rect.x, rect.y, DOT_SIZE, DOT_SIZE);
+    dots[id] = rect;
+}
+
+const arraysEqual = (a, b)=> {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+
+  // If you don't care about the order of the elements inside
+  // the array, you should sort both arrays here.
+  // Please note that calling sort on an array will modify that array.
+  // you might want to clone your array first.
+
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+const display_joypad_buttons = (buttons) =>{
+    const els = [
+      document.getElementById("js-btn-rect"),
+      document.getElementById("js-btn-cross"),
+      document.getElementById("js-btn-circle"),
+      document.getElementById("js-btn-triangle"),
+      document.getElementById("js-btn-l1"),
+      document.getElementById("js-btn-r1"),
+      document.getElementById("js-btn-l2"),
+      document.getElementById("js-btn-r2"),
+      document.getElementById("js-btn-select"),
+      document.getElementById("js-btn-start"),
+      document.getElementById("js-btn-lstick_push"),
+      document.getElementById("js-btn-rstick_push"),
+      document.getElementById("js-btn-left"),
+      document.getElementById("js-btn-right"),
+      document.getElementById("js-btn-top"),
+      document.getElementById("js-btn-bottom"),
+    ];
+    let i = 0;
+    for(const b of buttons){
+        el = els[i];
+        if(!el)return;
+        if(b > 0){
+            el.classList.remove("active-joypad-btn");      
+          }else{
+            el.classList.add("active-joypad-btn");      
+          }
+        i += 1;
+    }
+}
+
+let joypad_buf = [];
+const joypad = new JoyPad((buttons, axis) => {
+    drawJoystick([axis[0], axis[1]], true);
+    drawJoystick([axis[2], axis[3]], false);
+
+    i= 0;
+    let new_data = []
+    for(const b of buttons){new_data[i] = b; i+=1;}
+    for(const b of axis){new_data[i] = b+100; i+=1;}
+    
+    if(!arraysEqual(joypad_buf, new_data)){
+      joypad_buf = new_data;
+    console.log("Controller id= ", controller_id);
+      let buf = new Uint8Array(20);
+      i= 0;
+      for(const b of buttons){buf[i] = b; i+=1;}
+      for(const b of axis){buf[i] = b+100; i+=1;}
+        console.log(new String(buf))
+      fetch("/sync/joypad" + controller_id.toString(),{
+          method: "POST",
+          body :buf.buffer 
+      })
+
+      display_joypad_buttons(buttons);
+      console.log("SEND!");
+    }
+});
+
+let received_data = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+let lrf_pos =[];
+let ball_data = [] // positions 
+
+let visualizer = new myPlot("visualizer");
+visualizer.set_field_size(12000,12000);
+visualizer.create_shader();
+const colors = new MyColor();
+
+const update_plot = () => {
+  const field_data = [
+    {p0:[0,0],p1:[2500, 12000],col:colors.dark_red},
+    {p0:[9500,0],p1:[12000, 12000],col:colors.dark_blue},
+    {p0:[2500,0],p1:[9500, 1500],col:colors.dark_green},
+    {p0:[2500,10500],p1:[9500, 12000],col:colors.dark_green},
+    {p0:[2500,1500],p1:[9500, 10500],col:colors.dark_yellow},
+    {p0:[0,5500],p1:[1000, 6500],col:colors.dark_yellow},
+    {p0:[1450,5500],p1:[2500,6500],col:colors.dark_red2},
+    {p0:[2500,5000],p1:[3500,7000],col:colors.gray},
+    {p0:[8500,5000],p1:[9500,7000],col:colors.gray},
+    {p0:[9500,5500],p1:[10500,6500],col:colors.dark_blue2},
+    {p0:[11000,5500],p1:[12000,6500],col:colors.dark_yellow},
+    {p0:[5700,5750],p1:[6200,6250],col:colors.gray},
+    {p0:[5500,0],p1:[6500,150],col:colors.gray},
+    {p0:[5500,12000-150],p1:[6500,12000],col:colors.gray},
+  ]
+  visualizer.clear_buffer();
+  for(f of field_data){ visualizer.rectangle_top_bottom(f.p0, f.p1, f.col); }
+  
+  for(let i=0; i<lrf_pos.length / 2; i++){
+    visualizer.point([lrf_pos[i*2], lrf_pos[i*2+1]], colors.white, 60);
+  }
+
+  // draw ball
+  const b_pos = [received_data[0], received_data[1], received_data[2]];
+  const b_b = [received_data[3], received_data[4], received_data[5], received_data[6]];
+  visualizer.circle(b_pos, 100, colors.black);
+  visualizer.rectangle_top_bottom([b_b[0], b_b[1]], [b_b[2], b_b[3]], colors.red);
+  if(b_pos[0] > 100){
+      ball_data.push(b_pos);
+  }
+  for(const a of ball_data) visualizer.circle(a, 100, colors.green);
+
+  // draw robot position
+  const b_r = [received_data[7], received_data[8], received_data[9]];
+  visualizer.wired_circle(b_r, 500, colors.red, 30);
+  const p3 = [
+      b_r[0] - 1000 * Math.cos(b_r[2]),
+      b_r[1] + 1000 * Math.sin(b_r[2])
+   ]; 
+  visualizer.line(b_r, p3, colors.red, 30);
+
+  // draw lagori position
+  const r3 = 100;
+  const b_l = [received_data[11], received_data[10], received_data[12]];
+  visualizer.wired_circle(b_l, r3, colors.blue);
+  const l_rot = received_data[13];
+  if(l_rot > 100){
+    visualizer.wired_circle(b_l, 200, colors.red);
+    document.getElementById("report-lagori-r").innerText = "UP!"; 
+  }else{
+    const p3 = [
+        b_l[0] + 300 * Math.cos(l_rot),
+        b_l[1] - 300 * Math.sin(l_rot)
+     ]; 
+    visualizer.line(b_l, p3, colors.blue, 30);
+    document.getElementById("report-lagori-r").innerText = l_rot; 
+  }
+
+  visualizer.update_buffers();
+  visualizer.draw();
+
+  document.getElementById("report-ball-x").innerText = b_pos[0];
+  document.getElementById("report-ball-y").innerText = b_pos[1];
+  document.getElementById("report-ball-z").innerText = b_pos[2];
+  document.getElementById("report-ball-bbox-1").innerText = b_b[0];
+  document.getElementById("report-ball-bbox-2").innerText = b_b[1];
+  document.getElementById("report-ball-bbox-3").innerText = b_b[2];
+  document.getElementById("report-ball-bbox-4").innerText = b_b[3];
+  document.getElementById("report-detected").innerText = "";
+  document.getElementById("report-robot-x").innerText = b_r[0];
+  document.getElementById("report-robot-y").innerText = b_r[1];
+  document.getElementById("report-robot-rotation").innerText = b_r[2];
+  document.getElementById("report-lagori-x").innerText = b_l[0];
+  document.getElementById("report-lagori-y").innerText = b_l[1];
+  document.getElementById("report-lagori-z").innerText = b_l[2];
+
+  const slider_goto = received_data[14];
+  document.getElementById("ball-avoid-info").innerText = slider_goto;
+}
+
+const start_stream = async() => {
+fetch('./stream', {method:"POST"})
+  .then(response => {
+    const reader = response.body.getReader();
+    return new ReadableStream({
+      start(controller) {
+      const pump = ()=> {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            controller.close();
+            return;
+          }else{
+            received_data= new Float32Array(value.buffer);
+            update_plot();
+          }
+          controller.enqueue(value);
+          return pump();
+        });
+      }
+      return pump();
+      }
+    })
+  })
+  .then(stream => new Response(stream))
+  .then(response => response.blob())
+  .then(blob => URL.createObjectURL(blob))
+  .catch(err => console.error(err));
+}
+
+const start_lrf_stream = async() => {
+fetch('./lrf_stream', {method:"POST"})
+  .then(response => {
+    const reader = response.body.getReader();
+    return new ReadableStream({
+      start(controller) {
+      const pump = ()=> {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            controller.close();
+            return;
+          }else{ 
+              lrf_pos = new Float32Array(value.buffer); 
+              console.log(lrf_pos);
+          }
+          controller.enqueue(value);
+          return pump();
+        });
+      }
+      return pump();
+      }
+    })
+  })
+  .then(stream => new Response(stream))
+  .then(response => response.blob())
+  .then(blob => URL.createObjectURL(blob))
+  .catch(err => console.error(err));
+}
+
+const check_ping = async(url) => {
+  try {
+    const response = await fetchWithTimeout('/ping', { timeout:1000 });
+    return response.ok;
+  } catch (error) {
+    MyMessage({msg: "サーバーがダウンしたかもよ！"})
+    return false;
+  }
+}
+
+
+const connection_checker = async() => {
+    const set_status = (id, ok) => {
+        let el = document.getElementById(id);
+        if(ok){
+            el.classList.push("status-alive");
+            el.classList.remove("status-dead");
+          }else{
+            el.classList.push("status-dead");
+            el.classList.remove("status-alive");
+         }
+    }
+    set_status("indicator-r2", check_ping("/ping"));
+}
+// TODO: 
+// setInterval(() =>{connection_checker();}, 1000);
+
+window.onload = async()=> {
+  const is_first = await MyMessage({msg:"コントローラ1台目？[y/n]", title:"ここに2台、コントローラがあるじゃろう！選択するます！", yesbtn: "1台目", nobtn:"2台目"}); 
+  const el = document.getElementById("joypad-id");
+  controller_id = is_first == "ok" ? 1 : 2;
+    el.innerText = "JOYPAD_ID= " + controller_id.toString();
+    console.log(controller_id);
+  update_plot();
+  start_stream();
+  start_lrf_stream();
+  MyMessage({msg:"Controller start!", duration:1000}) 
+joypad.start();
+}
+</script>
+</body>
+</html>

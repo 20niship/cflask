@@ -1,0 +1,208 @@
+<!DOCTYPE html> 
+<html lang="ja">
+    <head>
+        <title>RC22 Controller</title>
+        <meta http-equiv="content-language" content="ja">
+        <meta name="google" content="notranslate" />
+         <script src="/public/js/joypad.js"></script>
+         <script src="/public/js/message.js"></script>
+         <script src="/public/js/myplot.js"></script>
+         <script src="/public/js/dash.js"></script>
+         <script src="/public/js/controller.js"></script>
+         <link href="/public/css/message.css" rel="stylesheet">
+         <link href="/public/css/controller.css" rel="stylesheet">
+    </head>
+<body onLoad='openWindow("hoge.html","myWindow");'>
+    <aside>
+        <ul>
+          <li> <a href="/"><img src="/public/img/home.png" width="30" height="30"></a> </li>
+          <li> <a href="/viz"><img src="/public/img/eye.png" width="30" height="30"></a> </li>
+          <li> <a href="/joypad"><img src="/public/img/joypad.png" width="30" height="30"></a> </li>
+          <li> <a href="/power"><img src="/public/img/power.png" width="30" height="30"></a> </li>
+          <li> <a href="/setting"><img src="/public/img/gear.png" width="30" height="30"></a> </li>
+          <li> <a href="/log"><img src="/public/img/note.png" width="30" height="30"></a> </li>
+          <script>
+            const goto_dash = ()=> {
+                const url = "http://" + (is_r2() ? "192.168.1.23" : "192.168.1.21") + ":8888";
+                          document.location= url;
+            }
+          </script>
+          <li> <div onclick="goto_dash()"><img src="/public/img/exit.png" width="30" height="30"></div> </li>
+        </ul>
+    </aside>
+    <header>
+        <img src="/public/img/logo.png" id="title-logo" />
+        <a id="title" href="/">RC22 Controller</a>
+    </header>
+<p id="ball-avoid-info"></p>
+            <canvas width = "500" height = "500" id = "visualizer"></canvas>
+<div id="report" style="display:none;">
+  <table>
+    <tbody>
+    <tr><td>ball x</td><td id="report-ball-x"></td></tr>
+    <tr><td>ball y</td><td id="report-ball-y"></td></tr>
+    <tr><td>ball z</td><td id="report-ball-z"></td></tr>
+    <tr><td>ball bbox 1</td><td id="report-ball-bbox-1"></td></tr>
+    <tr><td>ball bbox 2</td><td id="report-ball-bbox-2"></td></tr>
+    <tr><td>ball bbox 3</td><td id="report-ball-bbox-3"></td></tr>
+    <tr><td>ball bbox 4</td><td id="report-ball-bbox-4"></td></tr>
+    <tr><td>ball detected</td><td id="report-detected"></td></tr>
+    <tr><td>Robot x</td><td id="report-robot-x"></td></tr>
+    <tr><td>Robot y</td><td id="report-robot-y"></td></tr>
+    <tr><td>Robot rotation</td><td id="report-robot-rotation"></td></tr>
+    <tr><td>lagori x</td><td id="report-lagori-x"></td></tr>
+    <tr><td>lagori y</td><td id="report-lagori-y"></td></tr>
+    <tr><td>lagori z</td><td id="report-lagori-z"></td></tr>
+    <tr><td>lagori rot</td><td id="report-lagori-r"></td></tr>
+    <tr><td>lagori detected</td><td id="report-lagori-detected"></td></tr>
+    </tbody>
+  </table>
+</div>
+<script>
+let received_data = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+let lrf_pos =[];
+let ball_data = [] // positions 
+
+let visualizer = new myPlot("visualizer");
+visualizer.set_field_size(12000,12000);
+visualizer.create_shader();
+const colors = new MyColor();
+
+const update_plot = () => {
+  const field_data = [
+    {p0:[0,0],p1:[2500, 12000],col:colors.dark_red},
+    {p0:[9500,0],p1:[12000, 12000],col:colors.dark_blue},
+    {p0:[2500,0],p1:[9500, 1500],col:colors.dark_green},
+    {p0:[2500,10500],p1:[9500, 12000],col:colors.dark_green},
+    {p0:[2500,1500],p1:[9500, 10500],col:colors.dark_yellow},
+    {p0:[0,5500],p1:[1000, 6500],col:colors.dark_yellow},
+    {p0:[1450,5500],p1:[2500,6500],col:colors.dark_red2},
+    {p0:[2500,5000],p1:[3500,7000],col:colors.gray},
+    {p0:[8500,5000],p1:[9500,7000],col:colors.gray},
+    {p0:[9500,5500],p1:[10500,6500],col:colors.dark_blue2},
+    {p0:[11000,5500],p1:[12000,6500],col:colors.dark_yellow},
+    {p0:[5700,5750],p1:[6200,6250],col:colors.gray},
+    {p0:[5500,0],p1:[6500,150],col:colors.gray},
+    {p0:[5500,12000-150],p1:[6500,12000],col:colors.gray},
+  ]
+  visualizer.clear_buffer();
+  for(f of field_data){ visualizer.rectangle_top_bottom(f.p0, f.p1, f.col); }
+  
+  for(let i=0; i<lrf_pos.length / 2; i++){
+    visualizer.point([lrf_pos[i*2], lrf_pos[i*2+1]], colors.white, 60);
+  }
+
+  // draw ball
+  const b_pos = [received_data[0], received_data[1], received_data[2]];
+  const b_b = [received_data[3], received_data[4], received_data[5], received_data[6]];
+  visualizer.circle(b_pos, 100, colors.black);
+  visualizer.rectangle_top_bottom([b_b[0], b_b[1]], [b_b[2], b_b[3]], colors.red);
+  if(b_pos[0] > 100){
+      ball_data.push(b_pos);
+  }
+  for(const a of ball_data) visualizer.circle(a, 100, colors.green);
+
+  // draw robot position
+  const b_r = [received_data[7], received_data[8], received_data[9]];
+  visualizer.wired_circle(b_r, 500, colors.red, 30);
+  const p3 = [
+      b_r[0] - 1000 * Math.cos(b_r[2]),
+      b_r[1] + 1000 * Math.sin(b_r[2])
+   ]; 
+  visualizer.line(b_r, p3, colors.red, 30);
+
+  // draw lagori position
+  const r3 = 100;
+  const b_l = [received_data[11], received_data[10], received_data[12]];
+  visualizer.wired_circle(b_l, r3, colors.blue);
+  const l_rot = received_data[13];
+  if(l_rot > 100){
+    visualizer.wired_circle(b_l, 200, colors.red);
+    document.getElementById("report-lagori-r").innerText = "UP!"; 
+  }else{
+    const p3 = [
+        b_l[0] + 300 * Math.cos(l_rot),
+        b_l[1] - 300 * Math.sin(l_rot)
+     ]; 
+    visualizer.line(b_l, p3, colors.blue, 30);
+    document.getElementById("report-lagori-r").innerText = l_rot; 
+  }
+
+  visualizer.update_buffers();
+  visualizer.draw();
+
+  const slider_goto = received_data[14];
+  document.getElementById("ball-avoid-info").innerText = slider_goto;
+}
+
+const start_stream = async() => {
+fetch('/stream', {method:"POST"})
+  .then(response => {
+    const reader = response.body.getReader();
+    return new ReadableStream({
+      start(controller) {
+      const pump = ()=> {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            controller.close();
+            return;
+          }else{
+            received_data= new Float32Array(value.buffer);
+            update_plot();
+          }
+          controller.enqueue(value);
+          return pump();
+        });
+      }
+      return pump();
+      }
+    })
+  })
+  .then(stream => new Response(stream))
+  .then(response => response.blob())
+  .then(blob => URL.createObjectURL(blob))
+  .catch(err => console.error(err));
+}
+
+const start_lrf_stream = async() => {
+fetch('/lrf_stream', {method:"POST"})
+  .then(response => {
+    const reader = response.body.getReader();
+    return new ReadableStream({
+      start(controller) {
+      const pump = ()=> {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            controller.close();
+            return;
+          }else{ 
+              lrf_pos = new Float32Array(value.buffer); 
+              console.log(lrf_pos);
+          }
+          controller.enqueue(value);
+          return pump();
+        });
+      }
+      return pump();
+      }
+    })
+  })
+  .then(stream => new Response(stream))
+  .then(response => response.blob())
+  .then(blob => URL.createObjectURL(blob))
+  .catch(err => console.error(err));
+}
+
+window.onload = async()=> {
+  update_plot();
+  start_stream();
+
+  const is_first = await MyMessage({msg:"コントローラ1台目？[y/n]", title:"ここに2台、コントローラがあるじゃろう！選択するます！", yesbtn: "1台目", nobtn:"2台目"}); 
+  let controller_id = is_first == "ok" ? 1 : 2;
+  MyMessage({msg:"Controller start!" + controller_id.toString(), duration:1000}) 
+  start_joypad(controller_id, false);
+  MyMessage({msg:"Controller start!", duration:1000}) 
+}
+</script>
+</body>
+</html>

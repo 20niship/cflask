@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="myplot.js"></script>
+  </head>
+   <body>
+      <canvas width = "860" height = "860" id = "my_canvas"></canvas>
+      <script>
+        let A = new myPlot("my_canvas");
+        let colors = new MyColor();
+        const field_data = [
+          {p0:[0,0],p1:[2500, 12000],col:colors.dark_red},
+          {p0:[9500,0],p1:[12000, 12000],col:colors.dark_blue},
+          {p0:[2500,0],p1:[9500, 1500],col:colors.dark_green},
+          {p0:[2500,10500],p1:[9500, 12000],col:colors.dark_green},
+          {p0:[2500,1500],p1:[9500, 10500],col:colors.dark_yellow},
+          {p0:[0,5500],p1:[1000, 6500],col:colors.dark_yellow},
+          {p0:[1450,5500],p1:[2500,6500],col:colors.dark_red2},
+          {p0:[2500,5000],p1:[3500,7000],col:colors.gray},
+          {p0:[8500,5000],p1:[9500,7000],col:colors.gray},
+          {p0:[9500,5500],p1:[10500,6500],col:colors.dark_blue2},
+          {p0:[11000,5500],p1:[12000,6500],col:colors.dark_yellow},
+          {p0:[5700,5750],p1:[6200,6250],col:colors.gray},
+          {p0:[5500,0],p1:[6500,150],col:colors.gray},
+          {p0:[5500,12000-150],p1:[6500,12000],col:colors.gray},
+        ]
+        A.set_field_size(12000,12000);
+        A.create_shader();
+        const redraw = () => {
+          A.clear_buffer();
+          for(f of field_data){ A.rectangle_top_bottom(f.p0, f.p1, f.col); }
+          A.wired_circle([500,6000], 500,[255,0,200], 30);
+          A.line([500,6000],[1000,1000], [255,0,200], 30);
+          console.log(A.vertices.length / 2 / 6);
+          A.update_buffers();
+          A.draw();
+        }
+      setInterval(redraw, 50);
+      </script>
+   </body>
+</html>
+

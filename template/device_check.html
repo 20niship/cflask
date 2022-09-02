@@ -1,0 +1,643 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>RC22 Controller</title>
+         <script src="joypad.js"></script>
+         <script src="/public/joypad.js"></script>
+         <script src="message.js"></script>
+         <script src="/public/message.js"></script>
+         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    </head>
+<body>
+    <aside>
+        <ul>
+          <li> <a href="/">Main</a> </li>
+          <li> <a href="/multipletest">MultipleTeset</a> </li>
+          <li> <a href="/device-check">device-check</a> </li>
+          <li> <a href="/user-define">Callbacks</a> </li>
+          <li> <a href="/Logger">Logger</a> </li>
+        </ul>
+    </aside>
+    <header>
+        <img src="/public/logo.png" id="title-logo" />
+        <a id="title" href="/">RC22 Controller</a>
+    </header>
+<p id="ball-avoid-info"></p>
+
+
+    <div class="wrapper">
+        <div class="wrapper-visualizer wrapper-item" id="myDiv">
+        </div>
+        <div class="wrapper-controller wrapper-item">
+      <canvas id='left-joystick' class="joystick-canvas" width='90' height='90'></canvas>
+      <canvas id='right-joystick' class="joystick-canvas"  width='90' height='90'></canvas>
+      <div id='pressed-buttons'>
+          <div class="js-btn-vis" id="js-btn-left">L</div>
+          <div class="js-btn-vis" id="js-btn-right">R</div>
+          <div class="js-btn-vis" id="js-btn-top">T</div>
+          <div class="js-btn-vis" id="js-btn-bottom">B</div>
+
+          <div class="js-btn-vis" id="js-btn-triangle">△</div>
+          <div class="js-btn-vis" id="js-btn-circle">○</div>
+          <div class="js-btn-vis" id="js-btn-cross">☓</div>
+          <div class="js-btn-vis" id="js-btn-rect">□</div>
+          
+          <div class="js-btn-vis" id="js-btn-up">↓</div>
+          <div class="js-btn-vis" id="js-btn-down">↑</div>
+          <div class="js-btn-vis" id="js-btn-right">→</div>
+          <div class="js-btn-vis" id="js-btn-left">←</div>
+      </div>
+        </div>
+        <div class="wrapper-buttons wrapper-item">
+            <table>
+                <tbody>
+                  <button type="button" onclick="post_fetch('start')">Start R2</button>
+                  <button type="button" onclick="post_fetch('stop')">Stop R2</button>
+                  <button type="button" onclick="post_fetch('ball')">ball認識開始</button>
+                  <button type="button" onclick="post_fetch('lagori')">Lagori認識開始</button>
+                  <button type="button" onclick="post_fetch('frame0')">goto Frame0</button>
+                  <button type="button" onclick="post_fetch('ball-reset')">ball認識reset</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <script>
+const show_popup = (value) => {
+    const bg = document.getElementById("popup-container-bg");
+    const pu = document.getElementById("popup");
+if(value){
+    bg.style.display ="inline-block";              
+    pu.style.display ="inline-block";              
+}else{
+    bg.style.display ="none";              
+    pu.style.display ="none";              
+}
+}
+</script>
+    <div class="popup-container-bg" id="popup-container-bg" onclick="show_popup(false)">
+      <div class="popup" id="popup">
+<button type="button" onclick="show_popup(false)">Close</button>
+      <div class="popup-content"><h1>ぽっぷあっっぷめにゅーだよおーーー</h1>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+                  <button type="button" onclick="post_fetch('goto_start')">R2初期位置へ</button>
+      </div>
+    </div>
+  </div>
+                  <button type="button" onclick="show_popup(true)">Popup表示！</button>
+                </tbody>
+              </table>
+              <div id="goto">
+                <input id="goto-x" type="number" value="0">
+                <input id="goto-y" type="number" value="0">
+                <script>
+                  const go = async(url)=> {
+                    const x = document.getElementById("goto-x").value;
+                    const y = document.getElementById("goto-y").value;
+                    await fetch('/cb/goto?' + new URLSearchParams({ x:x, y:y}))
+                  }
+                </script>
+                <button type="button" onclick="go()">GO</button>
+              </div>
+<style>
+.popup {
+  width: 600px;
+  padding: 20px;
+  background-color:#5ab; 
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  border:solid 1px #fff;
+  border-radius :20px;
+  display:none;
+}
+
+.popup-container-bg{
+  position: absolute;
+  display:none;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:11;
+  background-color:rgba(0,0,0,0.6);
+}
+
+</style>
+</body>
+</html>
+
+<script>
+let dots = {};
+const  drawJoystick = (values, left) => {
+    const DOT_SIZE = 10;
+    let id = (left ? 'left' : 'right');
+    let canvas = document.getElementById(id + '-joystick');
+    let ctx = canvas.getContext('2d');
+    if (dots[id]) {
+        ctx.clearRect(dots[id].x - 1, dots[id].y - 1, DOT_SIZE + 2, DOT_SIZE + 2);
+    }
+    let x = Math.ceil(canvas.width / 2.8 * (1 + values[0]/100));
+    let y = Math.ceil(canvas.height / 2.8 * (1 + values[1]/100));
+    let rect = { x: x - DOT_SIZE / 2, y: y - DOT_SIZE / 2 };
+    ctx.fillStyle = 'cyan';
+    ctx.fillRect(rect.x, rect.y, DOT_SIZE, DOT_SIZE);
+    dots[id] = rect;
+}
+
+const arraysEqual = (a, b)=> {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+
+  // If you don't care about the order of the elements inside
+  // the array, you should sort both arrays here.
+  // Please note that calling sort on an array will modify that array.
+  // you might want to clone your array first.
+
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+const display_joypad_buttons = (buttons) =>{
+    const els = [
+      document.getElementById("js-btn-rect"),
+      document.getElementById("js-btn-cross"),
+      document.getElementById("js-btn-circle"),
+      document.getElementById("js-btn-triangle"),
+      document.getElementById("js-btn-l1"),
+      document.getElementById("js-btn-r1"),
+      document.getElementById("js-btn-l2"),
+      document.getElementById("js-btn-r2"),
+      document.getElementById("js-btn-select"),
+      document.getElementById("js-btn-start"),
+      document.getElementById("js-btn-lstick_push"),
+      document.getElementById("js-btn-rstick_push"),
+      document.getElementById("js-btn-left"),
+      document.getElementById("js-btn-right"),
+      document.getElementById("js-btn-top"),
+      document.getElementById("js-btn-bottom"),
+    ];
+    let i = 0;
+    for(const b of buttons){
+        el = els[i];
+        if(!el)return;
+        if(b > 0){
+            el.classList.remove("active-joypad-btn");      
+          }else{
+            el.classList.add("active-joypad-btn");      
+          }
+        i += 1;
+    }
+}
+
+let joypad_buf = [];
+const joypad = new JoyPad((buttons, axis) => {
+    const e = document.getElementById("joypaddata");
+    if(e){
+    let str = "";
+    let i=0
+    for(const b of buttons){ str += `<tr><td>Button ${i}</td><td>${b}</td></tr>`; i+=1;}
+    i = 0;
+    for(const b of axis){ str += `<tr><td>Axis ${i}</td><td>${b}</td></tr>`; i+= 1; }
+    e.innerHTML = str;
+      }
+    drawJoystick([axis[0], axis[1]], true);
+    drawJoystick([axis[2], axis[3]], false);
+
+    // i= 0;
+    // for(const b of buttons){joypad_buf[i] = b; i+=1;}
+    // for(const b of axis){joypad_buf[i] = b+100; i+=1;}
+    // const strarr = joypad_buf.toString();
+    // console.log(strarr);
+    // fetch("/sync/joypad",{
+    //     method: "POST",
+    //     body : strarr 
+    // })
+
+    i= 0;
+    let new_data = []
+    for(const b of buttons){new_data[i] = b; i+=1;}
+    for(const b of axis){new_data[i] = b+100; i+=1;}
+    
+    if(!arraysEqual(joypad_buf, new_data)){
+      joypad_buf = new_data;
+      let buf = new Uint8Array(20);
+      i= 0;
+      for(const b of buttons){buf[i] = b; i+=1;}
+      for(const b of axis){buf[i] = b+100; i+=1;}
+        console.log(new String(buf))
+      fetch("/sync/joypad",{
+          method: "POST",
+          body :buf.buffer 
+      })
+
+      display_joypad_buttons(buttons);
+      console.log("SEND!");
+    }
+});
+
+let received_data = []
+let ball_data = [] // positions 
+
+const get_shapes = () => {
+    const startTime = Date.now(); // 開始時間
+  let shapes = [
+    { type:'rect', y0: 0, y1: 2500, x0:0, x1: 12000, fillcolor:'f88' }, 
+    { type:'rect', y0: 0, y1: 1000, x0:5500, x1: 6500, fillcolor:'ff6' }, 
+    { type:'rect', y0: 1450, y1: 2500, x0:5500, x1: 6500, fillcolor:'f55' }, 
+    { type:'rect', y0: 2500, y1: 9500, x0:0, x1:1500, fillcolor:'afa' }, 
+    { type:'rect', y0: 2500, y1: 9500, x0:10500, x1:12000, fillcolor:'afa' }, 
+    { type:'rect', y0: 2500, y1: 9500, x0:1500, x1:10500, fillcolor:'ffa' }, 
+    { type:'rect', y0: 9500, y1: 12000, x0:0, x1:12000, fillcolor:'aaf' }, 
+    { type:'rect', y0: 9500, y1: 10500, x0:5500, x1:6500, fillcolor:'77f' }, 
+    { type:'rect', y0: 11000, y1: 12000, x0:5500, x1:6500, fillcolor:'ffa' }, 
+    { type:'rect', y0: 2500, y1: 3500, x0:5000, x1:7000, fillcolor:'eee' }, 
+    { type:'rect', y0: 8500, y1: 9500, x0:5000, x1:7000, fillcolor:'eee' }, 
+  ];
+
+  if(received_data.length < 14) return shapes; 
+ 
+  // draw ball
+  const b_pos = [received_data[0], received_data[1], received_data[2]];
+  const b_b = [received_data[3], received_data[4], received_data[5], received_data[6]];
+  const r = 100;
+  shapes.push({ type:'circle',x0:b_pos[0]-r, x1:b_pos[0]+r, y0:b_pos[1]-r, y1:b_pos[1]+r, fillcolor: 'black'})
+  shapes.push({ type:'rect',x0:b_b[0], x1:b_b[1], y0:b_b[2], y1:b_b[3], line:{color: 'red'}})
+  if(b_pos[0] > 100){
+      ball_data.push(b_pos);
+  }
+  for(const a of ball_data)
+    shapes.push({ type:'circle',x0:a[0]-r, x1:a[0]+r, y0:a[1]-r, y1:a[1]+r, fillcolor: 'green'})
+
+  // draw robot position
+  const r2 = 500;
+  const b_r = [received_data[7], received_data[8], received_data[9]];
+  shapes.push({ type:'circle',y0:b_r[0]-r2, y1:b_r[0]+r2, x0:b_r[1]-r2, x1:b_r[1]+r2, line: {color:'red'}})
+  const p3 = [
+      b_r[0] - 1000 * Math.cos(b_r[2]),
+      b_r[1] + 1000 * Math.sin(b_r[2])
+   ]; 
+  shapes.push({ type:'line',y0:p3[0], x0:p3[1], y1:p3[0], x1:p3[1], line: {color:'red'}})
+
+  // draw lagori position
+  const r3 = 100;
+  const b_l = [received_data[11], received_data[10], received_data[12]];
+  shapes.push({ type:'circle',y0:b_l[1]-r3, y1:b_l[1]+r3, x0:b_l[0]-r3, x1:b_l[0]+r3, line: {color:'blue'}})
+  const l_rot = received_data[13];
+  if(l_rot > 100){
+      const r4 = 200;
+    shapes.push({ type:'circle',y0:b_l[1]-r4, y1:b_l[1]+r4, x0:b_l[0]-r4, x1:b_l[0]+r4, line: {color:'blue'}})
+    document.getElementById("report-lagori-r").innerText = "UP!"; 
+  }else{
+    const p3 = [
+        b_l[0] + 300 * Math.cos(l_rot),
+        b_l[1] - 300 * Math.sin(l_rot)
+     ]; 
+    shapes.push({ type:'line',y0:b_l[1], x0:b_l[0], y1:p3[1], x1:p3[0], line:{color:'blue'}})
+    document.getElementById("report-lagori-r").innerText = l_rot; 
+  }
+
+  document.getElementById("report-ball-x").innerText = b_pos[0];
+  document.getElementById("report-ball-y").innerText = b_pos[1];
+  document.getElementById("report-ball-z").innerText = b_pos[2];
+  document.getElementById("report-ball-bbox-1").innerText = b_b[0];
+  document.getElementById("report-ball-bbox-2").innerText = b_b[1];
+  document.getElementById("report-ball-bbox-3").innerText = b_b[2];
+  document.getElementById("report-ball-bbox-4").innerText = b_b[3];
+  document.getElementById("report-detected").innerText = "";
+  document.getElementById("report-robot-x").innerText = b_r[0];
+  document.getElementById("report-robot-y").innerText = b_r[1];
+  document.getElementById("report-robot-rotation").innerText = b_r[2];
+  document.getElementById("report-lagori-x").innerText = b_l[0];
+  document.getElementById("report-lagori-y").innerText = b_l[1];
+  document.getElementById("report-lagori-z").innerText = b_l[2];
+
+  const slider_goto = received_data[14];
+    console.log(slider_goto);
+  document.getElementById("ball-avoid-info").innerText = slider_goto;
+  return shapes;
+}
+
+const update_plot = () => {
+const height = window.innerHeight;
+  const shapes = get_shapes();
+  const layout = {
+    xaxis: { range: [0, 12000], showgrid: false },
+    yaxis: { range: [0, 12000], showgrid: false },
+    width: height, height: height,
+    shapes
+  };
+
+  const data = [{
+    x: [1.5, 4.5],
+    y: [0.75, 0.75],
+    text: ['Unfilled Rectangle', 'Filled Rectangle'],
+    mode: 'text'
+  }];
+  Plotly.newPlot('myDiv', data, layout);
+}
+
+const start_stream = async() => {
+fetch('./stream')
+  .then(response => {
+    const reader = response.body.getReader();
+    return new ReadableStream({
+      start(controller) {
+      const pump = ()=> {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            controller.close();
+            return;
+          }else{
+            received_data= new Float32Array(value.buffer);
+            update_plot();
+          }
+          controller.enqueue(value);
+          return pump();
+        });
+      }
+      return pump();
+      }
+    })
+  })
+  .then(stream => new Response(stream))
+  .then(response => response.blob())
+  .then(blob => URL.createObjectURL(blob))
+  //.then(url => console.log(image.src = url))
+  .catch(err => console.error(err));
+}
+
+window.onload = async()=> {
+  // await MyMessage({title:"Joypadを繋いでください"}) 
+   update_plot();
+  start_stream();
+  MyMessage({msg:"Controller start!", duration:1000}) 
+joypad.start();
+}
+</script>
+
+<style>
+html{font-size: 100%;}
+html, body {
+    margin: 0; height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    color:#fff;
+}
+
+.wrapper{
+    background-color: #333;
+    margin-top: 55px;
+    margin-left:105px;
+    margin-right: 10px;
+    height: calc(100vh - 60px);
+    grid-template-rows:130px;
+    display: grid;
+    padding:0;
+}
+
+.wrapper-visualizer{
+    grid-row: 1 / 3;
+    grid-column: 1 / 2;
+}
+
+.wrapper-buttons{
+    grid-row: 2 / 3;
+    grid-column: 2 / 3;
+}
+
+.wrapper-controller{
+    grid-row: 1 / 2;
+    grid-column: 2 / 3;
+}
+
+.wrapper-item{
+    border:solid 1px #aaa;
+}
+.joystick-canvas{ margin:3px; }
+
+.pressed-buttons{
+    overflow: hidden;
+}
+
+.active-joypad-btn{
+  color:red;
+  background-color:#fff;
+}
+
+.js-btn-vis{
+    border: solid 1px #fff;
+    border-radius: 50%;
+    width:20px;
+    height:20px;
+    text-align: center;
+    float: left;
+}
+
+header{
+  position:absolute;
+  top: 0;
+  left:0;
+  right:0;
+  z-index:10;
+  height:50px;
+  width:100%;
+  background-color: #222;
+}
+header img{
+    width:40px;
+    margin:3px;
+}
+
+#title{
+    margin-left: 20px;
+    line-height: 30px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 2.0rem;
+    color:white;
+}
+
+aside{
+  width: 100px;
+  overflow: visible;
+  background: #00aff0;
+  border-right: 1px solid #038ec1;
+  position: absolute;
+  top: 50px;
+  bottom: 0;
+  height: 100%;
+  left: 0;
+  overflow: hidden;
+  z-index: 9;
+}
+aside ul { padding-left: 0; }
+aside li {
+  position: relative;
+  display: block;
+  width: 250px;
+  overflow: hidden;
+}
+aside li a {
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: #fff;
+  display: block;
+  padding: 10px;
+  position: absolute;
+  text-decoration: none;
+  transition: all 0.1s linear 0s;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+aside li a:hover { background: #038ec1; }
+
+#report{
+  background-color: #eaf;
+  opacity: 0.7;
+  position: fixed;
+  right:20px;
+  bottom:20px;
+  width:400px;
+  z-index:1000;
+  border: solid 1px #000;
+}
+table, tbody {width: 100%; }
+th,td { border: solid 1px;}
+table { border-collapse:  collapse;}
+button {
+  background-color: #222;
+  border-radius: 4px;
+  border-style: none;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 1.0rem;
+  line-height: 1.5;
+  outline: none;
+  overflow: hidden;
+  padding: 3px 10px 3px;
+  position: relative;
+  text-align: center;
+  text-transform: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  margin:4px;
+}
+
+button:hover, button:focus {
+  background-color: #fff;
+  color:#222;
+}
+
+
+/*  ###################################
+   #####        Message Dialog      #######
+   ###################################*/
+   .my-dialog-ovelay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.my-dialog-confirm {
+  width: 400px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  border:solid 1px #aaa;
+  overflow: hidden;
+}
+
+.my-dialog-simple{
+  width: 180px;
+  position:fixed;
+  top:100px;
+  right: 10px;
+  height:40px;
+  padding:10px;
+  background-color: rgba(24, 48, 155, 0.479);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  border:solid 1px #aaa;
+  border-radius: 3px;
+  overflow: hidden;
+  z-index:99999;
+}
+
+.my-dialog-title {
+  font-size: 13px;
+  font-weight: bold;
+  padding:8px;
+  margin: 0;
+  color: #888;
+  display: inline-block;
+}
+
+.my-dialog-msg {
+  padding-left: 12px;
+}
+
+.my-dialog-confirm  .fa-times,
+.my-dialog-simple  .fa-times {
+  float: right;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.5s ease;
+  padding:10px;
+  border-radius: 1px;
+}
+
+.my-dialog-simple  .fa-times {
+  padding:0;
+}
+
+.my-dialog-buttons {
+  background-color: #ddd;
+  width:100%;
+  height:40px;
+  padding: 0;
+  padding-right:20px;
+}
+
+#my-confirm-yes-btn,
+#my-confirm-no-btn {
+  width: 80px;
+  height:30px;
+  margin:5px 5px;
+  float:right;
+  cursor: pointer;
+}
+
+#my-confirm-yes-btn{
+  background-color: rgb(182, 14, 14);
+  color:#fff;
+}
+
+.my-dialog-fadeout-remove {
+  opacity: 0.0;
+  transition-property: opacity; 
+  transition-duration: 0.3s;
+}
+
+</style>

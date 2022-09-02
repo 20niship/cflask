@@ -1,0 +1,16 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>Plot Test</title>
+         <script src="/public/js/myplot.js"></script>
+         <script src="/public/js/dash.js"></script>
+    </head>
+<body>
+<canvas width = "800" height = "800" id = "visualizer"></canvas>
+</body>
+<script>
+const plotter = new CustomDrawer();
+const canvas  = document.getElementById("visualizer");
+  canvas.style.width = window.width;
+  canvas.style.height= window.height;
+</script>

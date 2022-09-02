@@ -1,0 +1,52 @@
+<html>
+<head>
+    <title>Test Page</title>
+</head>
+
+<body>
+<h1>Form Test</h1>
+
+<h2>GET File transfer test</h2>
+<form method="post" action="form">
+<input type="file" id="avatar" name="value2">
+<p><input type="submit" value="送信"><input type="reset" value="リセット"></p>
+</form>
+
+
+<form action="/form" method="post" enctype="multipart/form-data">
+<input type="file" id="avatar" name="value2"><br>
+<p><input type="submit" value="送信"><input type="reset" value="リセット"></p>
+</form>
+
+
+
+<h2>POST version</h2>
+<form method="post" action="form">
+<input type="text" name="text1" />
+<input type="radio" name="radio1" value="A" checked="checked" /> A
+<input type="radio" name="radio1" value="B" /> B
+<input type="checkbox" name="check1" value="A_Checked" /> A_Checked
+<input type="checkbox" name="check1" value="B_Checked" /> B_Checked
+<input type="checkbox" name="check1" value="C_Checked" /> C_Checked
+<input type="file" id="avatar" name="value2">
+<p><input type="submit" value="送信"><input type="reset" value="リセット"></p>
+</form>
+
+<h2>GET version</h2>
+<form method="get" action="form">
+    <input type="text" name="text1" />
+    <input type="radio" name="radio1" value="A" checked="checked" /> A
+    <input type="radio" name="radio1" value="B" /> B
+    <input type="checkbox" name="check1" value="A_Checked" /> A_Checked
+    <input type="checkbox" name="check1" value="B_Checked" /> B_Checked
+    <input type="checkbox" name="check1" value="C_Checked" /> C_Checked
+    <input type="file" id="avatar" name="value2">
+    <p><input type="submit" value="送信"><input type="reset" value="リセット"></p></form>
+      
+<p>Form end</p>
+
+
+</body>
+
+
+</html>
